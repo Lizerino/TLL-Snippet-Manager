@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 
@@ -15,16 +17,20 @@ namespace TLL_Snippet_Manager
 
         public bool SaveSnippet { get; set; }
 
-        public AddSnippetDialog(string codeBody, IEnumerable<string> tags)
+        public ObservableCollection<Snippet> SnippetSourceList { get; set; }
+
+        public AddSnippetDialog(string codeBody, ObservableCollection<Snippet> snippetSourceList)
         {
             InitializeComponent();
             SaveSnippet = false;
             snippet = new Snippet();
             snippet.Tags = new ObservableCollection<string>();
             listBoxTags.ItemsSource = snippet.Tags;
+            snippet.Code = codeBody;
             var reader = new StringReader(codeBody);
             txtBoxSnippetName.Text = reader.ReadLine();
-            comboBoxAddTag.ItemsSource = tags;
+            SnippetSourceList = snippetSourceList;
+            comboBoxAddTag.ItemsSource = SnippetSourceList.SelectMany(s=>s.Tags).Distinct();
         }
 
         private void txtBoxAddTag_KeyDown(object sender, KeyEventArgs e)
@@ -45,20 +51,19 @@ namespace TLL_Snippet_Manager
 
         private void btnAddTag_Click(object sender, RoutedEventArgs e)
         {
-            if (snippet.Tags.Contains(comboBoxAddTag.Text.Trim()) || comboBoxAddTag.Text == "Tag already added")
+            if (snippet.Tags.Contains((comboBoxAddTag.Text.Trim('\r', '\n')).Trim()) || comboBoxAddTag.Text == "Tag already added")
             {
                 comboBoxAddTag.Text = "Tag already added";
             }
             else
             {
-                snippet.Tags.Add(comboBoxAddTag.Text.Trim());
+                snippet.Tags.Add((comboBoxAddTag.Text.Trim('\r', '\n')).Trim());
                 comboBoxAddTag.SelectedItem = null;
                 comboBoxAddTag.Text = "";
             }
         }
 
-        // TODO: Add proper binding and proper validation to inputs
-        // TODO: Check for invalid chars in title as its the filename
+        // TODO: Add proper binding and proper validation to inputs        
         private void btnOK_Click(object sender, RoutedEventArgs e)
         {
             char[] invalidPathChars = Path.GetInvalidPathChars();
@@ -68,11 +73,20 @@ namespace TLL_Snippet_Manager
             }
             else if (txtBoxSnippetName.Text.IndexOfAny(invalidPathChars) != -1)
             {
-                txtBoxSnippetName.Text = "Snippet name can not contain any of the following characters " + invalidPathChars.ToString();
+                StringBuilder invalidCharactersInSnippetName = new StringBuilder();
+                foreach (var item in invalidPathChars)
+                {
+                    invalidCharactersInSnippetName.Append(item);
+                }
+                txtBoxSnippetName.Text = "Snippet name can not contain any of the following characters " + invalidCharactersInSnippetName;
+            }
+            else if(SnippetSourceList.Where(s=>s.Title==txtBoxSnippetName.Text).Count()>0)                
+                {
+                txtBoxSnippetName.Text = "Snippet name must be unique";
             }
             else
             {
-                snippet.Title = txtBoxSnippetName.Text;
+                snippet.Title = txtBoxSnippetName.Text;                
                 SaveSnippet = true;
                 this.Close();
             }

@@ -12,7 +12,7 @@
              d:DesignHeight="2580"
              xmlns:local="clr-namespace:TLL_Snippet_Manager"
              local:VsTheme.UseVsTheme="True">
-   
+
     
     <Grid Width="Auto"
           Height="Auto"
@@ -29,7 +29,8 @@
             <RowDefinition MinHeight="200" />
         </Grid.RowDefinitions>
         <Grid Height="Auto"
-              Grid.Row="0">
+              Grid.Row="0"
+              Margin="0,5,0,5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition></ColumnDefinition>
                 <ColumnDefinition></ColumnDefinition>
@@ -50,7 +51,7 @@
                  Height="25"
                  TextWrapping="Wrap"
                  TextChanged="txtBoxSearch_TextChanged"
-                 AllowDrop="False" />
+                 AllowDrop="False" />        
         <Label Name="lblSnippets"
                VerticalAlignment="Top"
                Grid.Row="2"
@@ -58,8 +59,10 @@
         <ListBox Name="listBoxSnippets"
                  VerticalAlignment="Top"
                  Grid.Row="3"
-                 Height="300"                 
-                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 Height="Auto"                 
+                 MinHeight="50"
+                 MaxHeight="250"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"           
                  SelectionChanged="listBoxSnippets_Selected"
                  PreviewDrop="listBoxSnippets_Drop"
                  PreviewDragEnter="listBoxSnippets_OnDragOver"
@@ -74,7 +77,8 @@
             </ListBox.ItemTemplate>
         </ListBox>
         <Grid Height="Auto"
-              Grid.Row="4">
+              Grid.Row="4"
+              Margin="0,5,0,5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition></ColumnDefinition>
                 <ColumnDefinition></ColumnDefinition>
@@ -95,7 +99,9 @@
                  SelectionMode="Multiple"
                  VerticalAlignment="Top"
                  Grid.Row="5"
-                 Height="200"                 
+                 Height="Auto"                 
+                 MinHeight="50"
+                 MaxHeight="250"
                  ScrollViewer.VerticalScrollBarVisibility="Auto">
             <ListBox.ItemTemplate>
                 <DataTemplate>
@@ -115,6 +121,6 @@
                        MinHeight="300"   
                        IsReadOnly="True"
                        ScrollViewer.VerticalScrollBarVisibility="Auto" />
-        </Border>
+        </Border>        
     </Grid>
 </UserControl>

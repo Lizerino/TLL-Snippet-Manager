@@ -127,59 +127,71 @@ namespace TLL_Snippet_Manager
             {
                 SelectRootFolder();
             }
-            // Change this to stop dragover and show a popup
-            // If user cancels folder selection or a folder is not selected for any other reason show error message
+
+            // Change this to stop dragover and show a popup If user cancels folder selection or a
+            // folder is not selected for any other reason show error message
             if (Properties.Settings.Default.TLLRootDirectory == "")
             {
                 MessageBox.Show("No snippet directory selected", "Error");
             }
             else
             {
-            string dataString = (string)e.Data.GetData(DataFormats.StringFormat);
-            dataString.Trim();
+                string dataString = GetCleanedDataString(e);
 
-            //Check if snippet exists already exists
-            if (snippetSourceList.Where(s => s.Code == dataString).Count() <= 0)
-            {
-                AddSnippetDialog AddSnippet = new AddSnippetDialog(dataString, snippetSourceList.SelectMany(t => t.Tags).Distinct());
-                AddSnippet.ShowDialog();
-                e.Effects = DragDropEffects.Copy;
-                if (AddSnippet.SaveSnippet == true)
+                if (snippetSourceList.Where(s => s.Code == dataString.Trim()).Count() <= 0)
                 {
-                    StringBuilder snippetFileContent = new StringBuilder();
-                    snippetFileContent.Append(tagOpenString);
-                    if (AddSnippet.snippet.Tags != null)
+                    AddSnippetDialog AddSnippet = new AddSnippetDialog(dataString, snippetSourceList);
+                    AddSnippet.ShowDialog();
+                    e.Effects = DragDropEffects.Copy;
+                    if (AddSnippet.SaveSnippet == true)
                     {
-                        foreach (var tag in AddSnippet.snippet.Tags)
+                        StringBuilder snippetFileContent = new StringBuilder();
+                        snippetFileContent.Append(tagOpenString);
+                        if (AddSnippet.snippet.Tags != null)
                         {
-                            snippetFileContent.Append("," + tag + ",");
+                            foreach (var tag in AddSnippet.snippet.Tags)
+                            {
+                                snippetFileContent.Append("," + tag + ",");
+                            }
                         }
+                        snippetFileContent.Append(tagCloseString);
+                        snippetFileContent.Append(bodyOpenString);
+                        snippetFileContent.Append(dataString);
+                        snippetFileContent.Append(bodyCloseString);
+                        File.WriteAllText(GetSnippetsRootDirectory() + AddSnippet.snippet.Title + ".txt", snippetFileContent.ToString());
+                        snippetSourceList.Add(AddSnippet.snippet);
+                        updateListBoxDisplay();
                     }
-                    snippetFileContent.Append(tagCloseString);
-                    snippetFileContent.Append(Environment.NewLine + bodyOpenString + Environment.NewLine);
-                    snippetFileContent.Append(dataString);
-                    snippetFileContent.Append(Environment.NewLine + bodyCloseString);
-                    File.WriteAllText(GetSnippetsRootDirectory() + AddSnippet.snippet.Title + ".txt", snippetFileContent.ToString());
-                    snippetSourceList.Add(AddSnippet.snippet);
-                    updateListBoxDisplay();
                 }
-            }
-            else
-            {
-                // TODO: Inform user snippet already exists
-            }
+                else
+                {
+                    // TODO: Inform user snippet already exists
+                }
             }
             e.Handled = true;
         }
 
+        private static string GetCleanedDataString(DragEventArgs e)
+        {
+            string dataString = (string)e.Data.GetData(DataFormats.StringFormat);
+            dataString = dataString.Trim('\r', ' ', '\n');
+            return dataString;
+        }
+
         public void listBoxSnippets_OnDragOver(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.UnicodeText))
+            string dataString = GetCleanedDataString(e);
+            var duplicateSnippet = snippetSourceList.Where(s => s.Code == dataString).FirstOrDefault();
+            if (e.Data.GetDataPresent(DataFormats.UnicodeText) && dataString != null && duplicateSnippet == null)
             {
                 e.Effects = DragDropEffects.Copy;
             }
             else
             {
+                // TODO: Damn popup to show which snippet the current dragdata is a duplicate off
+                //popupDuplicateEntry.Visibility = Visibility.Visible;
+                //myPopupText.Text = "This snippet is already saved as " + duplicateSnippet.Title;
+                //popupDuplicateEntry.PlacementTarget="listBoxSnippets";
                 e.Effects = DragDropEffects.None;
             }
             e.Handled = true;
@@ -246,7 +258,7 @@ namespace TLL_Snippet_Manager
         {
             var codeStart = snippetFileContent.IndexOf(bodyOpenString);
             var codeEnd = snippetFileContent.IndexOf(bodyCloseString);
-            var result = snippetFileContent.Substring(codeStart + bodyOpenString.Length + 2, (codeEnd - (codeStart + bodyOpenString.Length) - 2));
+            var result = snippetFileContent.Substring(codeStart + bodyOpenString.Length, (codeEnd - (codeStart + bodyOpenString.Length)));
             return result;
         }
 
@@ -290,14 +302,14 @@ namespace TLL_Snippet_Manager
 
         private void SelectRootFolder()
         {
-            // TODO: Bad design set default folder in whatever vs has as default repo folder            
-                System.Windows.Forms.FolderBrowserDialog openFileDlg = new System.Windows.Forms.FolderBrowserDialog();
-                var result = openFileDlg.ShowDialog();
-                if (result.ToString() != string.Empty && result != System.Windows.Forms.DialogResult.Cancel)
-                {
-                    Properties.Settings.Default.TLLRootDirectory = openFileDlg.SelectedPath + @"\";
-                    Properties.Settings.Default.Save();
-                }            
+            // TODO: Bad design set default folder in whatever vs has as default repo folder
+            System.Windows.Forms.FolderBrowserDialog openFileDlg = new System.Windows.Forms.FolderBrowserDialog();
+            var result = openFileDlg.ShowDialog();
+            if (result.ToString() != string.Empty && result != System.Windows.Forms.DialogResult.Cancel)
+            {
+                Properties.Settings.Default.TLLRootDirectory = openFileDlg.SelectedPath + @"\";
+                Properties.Settings.Default.Save();
+            }
         }
 
         private void listBoxSnippets_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -305,15 +317,23 @@ namespace TLL_Snippet_Manager
             // TODO: Add delete confirmation
             if (e.Key == Key.Delete && listBoxSnippets.SelectedItem != null)
             {
-                if (MessageBox.Show("Do you want to delete "+ listBoxSnippets.SelectedItem.ToString(), "Confirmation", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-                {                    
-                var NameOfSnippetToRemove = listBoxSnippets.SelectedItem.ToString();
-                File.Delete(GetSnippetsRootDirectory() + NameOfSnippetToRemove + ".txt");
-                var snippetToRemove = snippetSourceList.Where(s => s.Title == NameOfSnippetToRemove).FirstOrDefault();
-                snippetSourceList.Remove(snippetToRemove);
-                updateListBoxDisplay();
-                }                
+                if (MessageBox.Show("Do you want to delete " + listBoxSnippets.SelectedItem.ToString(), "Confirmation", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                {
+                    var NameOfSnippetToRemove = listBoxSnippets.SelectedItem.ToString();
+                    File.Delete(GetSnippetsRootDirectory() + NameOfSnippetToRemove + ".txt");
+                    var snippetToRemove = snippetSourceList.Where(s => s.Title == NameOfSnippetToRemove).FirstOrDefault();
+                    snippetSourceList.Remove(snippetToRemove);
+                    updateListBoxDisplay();
+                }
             }
         }
+
+        //private void listBoxSnippets_PreviewDragLeave(object sender, DragEventArgs e)
+        //{
+        //    if (popupDuplicateEntry.Visibility == Visibility.Visible)
+        //    {
+        //    popupDuplicateEntry.Visibility = Visibility.Hidden;
+        //    }
+        //}
     }
 }
