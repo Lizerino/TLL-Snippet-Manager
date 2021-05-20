@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="TLL_Snippet_Manager.b7506383-c0ae-49c6-a045-675fd045b2f1" Version="1.0" Language="en-US" Publisher="Stefan Karlsson" />
+        <Identity Id="TLL_Snippet_Manager.b7506383-c0ae-49c6-a045-675fd045b2f1" Version="1.0" Language="en-US" Publisher="Stefan Lars-Gunnar Karlsson" />
         <DisplayName>TLL Snippet Manager</DisplayName>
         <Description xml:space="preserve">A simple litte snippet manager. Drag and drop code snippets from your code window to the snippet and back. You can add tags to your snippets and all snippets are saved as textfiles in a directory of your choice.</Description>
         <MoreInfo>https://github.com/Lizerino/TLL-Snippet-Manager.git</MoreInfo>
